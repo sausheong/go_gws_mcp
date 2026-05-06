@@ -16,11 +16,11 @@ func slidesFactory(ctx context.Context, opts ...option.ClientOption) (*slidesapi
 	return slidesapi.NewService(ctx, opts...)
 }
 
-// RegisterTools wires Slides tools onto srv. Filled in across Tasks 5–10.
+// RegisterTools wires all Slides tools onto srv and records them in registry.
 func RegisterTools(srv *server.MCPServer, registry *core.Registry, oauthClient *auth.OAuthClient, defaultEmail string) {
-	// register* calls added in subsequent tasks.
-	_ = srv
-	_ = registry
-	_ = oauthClient
-	_ = defaultEmail
+	registerCreate(srv, registry, oauthClient, defaultEmail)
+	registerGet(srv, registry, oauthClient, defaultEmail)
+	registerBatchUpdate(srv, registry, oauthClient, defaultEmail)
+	registerGetPage(srv, registry, oauthClient, defaultEmail)
+	registerGetThumbnail(srv, registry, oauthClient, defaultEmail)
 }
