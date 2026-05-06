@@ -38,6 +38,12 @@ const (
 	SheetsScope         = "https://www.googleapis.com/auth/spreadsheets"
 )
 
+// Slides scopes.
+const (
+	SlidesReadonlyScope = "https://www.googleapis.com/auth/presentations.readonly"
+	SlidesScope         = "https://www.googleapis.com/auth/presentations"
+)
+
 // BaseScopes are required for user identification on every OAuth flow.
 var BaseScopes = []string{UserinfoEmailScope, UserinfoProfileScope, OpenIDScope}
 
@@ -48,6 +54,7 @@ var ScopeHierarchy = map[string][]string{
 	DriveScope:       {DriveReadonlyScope, DriveFileScope},
 	DocsScope:        {DocsReadonlyScope},
 	SheetsScope:      {SheetsReadonlyScope},
+	SlidesScope:      {SlidesReadonlyScope},
 }
 
 // ToolScopesMap is the full scope set per service.
@@ -59,6 +66,7 @@ var ToolScopesMap = map[string][]string{
 	"drive":  {DriveReadonlyScope, DriveFileScope, DriveScope},
 	"docs":   {DocsReadonlyScope, DocsScope, DriveReadonlyScope},
 	"sheets": {SheetsReadonlyScope, SheetsScope, DriveReadonlyScope},
+	"slides": {SlidesReadonlyScope, SlidesScope},
 }
 
 // HasRequiredScopes reports whether `available` satisfies all of `required`,

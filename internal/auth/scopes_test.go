@@ -147,3 +147,28 @@ func TestScopesForTools_Sheets(t *testing.T) {
 		}
 	}
 }
+
+func TestHasRequiredScopes_SlidesCoversReadonly(t *testing.T) {
+	if !HasRequiredScopes([]string{SlidesScope}, []string{SlidesReadonlyScope}) {
+		t.Fatal("presentations should cover presentations.readonly via hierarchy")
+	}
+}
+
+func TestScopesForTools_Slides(t *testing.T) {
+	got := ScopesForTools([]string{"slides"})
+	want := map[string]bool{
+		SlidesReadonlyScope:  true,
+		SlidesScope:          true,
+		OpenIDScope:          true,
+		UserinfoEmailScope:   true,
+		UserinfoProfileScope: true,
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d, want %d: got=%v", len(got), len(want), got)
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope: %s", s)
+		}
+	}
+}
