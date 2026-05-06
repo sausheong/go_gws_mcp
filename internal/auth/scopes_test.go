@@ -121,3 +121,29 @@ func TestScopesForTools_Docs(t *testing.T) {
 		}
 	}
 }
+
+func TestHasRequiredScopes_SheetsCoversReadonly(t *testing.T) {
+	if !HasRequiredScopes([]string{SheetsScope}, []string{SheetsReadonlyScope}) {
+		t.Fatal("spreadsheets should cover spreadsheets.readonly via hierarchy")
+	}
+}
+
+func TestScopesForTools_Sheets(t *testing.T) {
+	got := ScopesForTools([]string{"sheets"})
+	want := map[string]bool{
+		SheetsReadonlyScope:  true,
+		SheetsScope:          true,
+		DriveReadonlyScope:   true,
+		OpenIDScope:          true,
+		UserinfoEmailScope:   true,
+		UserinfoProfileScope: true,
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d, want %d: got=%v", len(got), len(want), got)
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope: %s", s)
+		}
+	}
+}
