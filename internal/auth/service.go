@@ -95,7 +95,12 @@ func RequireGmailService[T any](
 		if err != nil {
 			var authErr *AuthRequiredError
 			if errors.As(err, &authErr) {
-				return mcp.NewToolResultText(authErr.Message), nil
+				flow, ferr := client.StartAuthFlow(userEmail, "Gmail")
+				if ferr != nil {
+					slog.Warn("StartAuthFlow failed", "tool", toolName, "user", userEmail, "err", ferr)
+					return mcp.NewToolResultText(authErr.Message), nil
+				}
+				return mcp.NewToolResultText(flow.Message), nil
 			}
 			return mcp.NewToolResultError(fmt.Sprintf("auth error: %v", err)), nil
 		}
