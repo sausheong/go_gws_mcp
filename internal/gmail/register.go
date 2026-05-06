@@ -1,12 +1,20 @@
 package gmail
 
 import (
+	"context"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
+	gmailapi "google.golang.org/api/gmail/v1"
+	"google.golang.org/api/option"
 
 	"github.com/sausheong/go_gws_mcp/internal/auth"
 	"github.com/sausheong/go_gws_mcp/internal/core"
 )
+
+func gmailFactory(ctx context.Context, opts ...option.ClientOption) (*gmailapi.Service, error) {
+	return gmailapi.NewService(ctx, opts...)
+}
 
 // RegisterTools wires all Gmail tools onto srv and records them in registry.
 func RegisterTools(srv *server.MCPServer, registry *core.Registry, oauthClient *auth.OAuthClient, defaultEmail string) {
@@ -27,7 +35,7 @@ func registerSearch(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClie
 	)
 	scopes := []string{auth.GmailReadonlyScope}
 	reg.Record("search_gmail_messages", scopes)
-	srv.AddTool(tool, auth.RequireGmailService("search_gmail_messages", scopes, c, email, SearchGmailMessages))
+	srv.AddTool(tool, auth.RequireGoogleService("search_gmail_messages", "Gmail", scopes, gmailFactory, c, email, SearchGmailMessages))
 }
 
 func registerGet(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient, email string) {
@@ -38,7 +46,7 @@ func registerGet(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient,
 	)
 	scopes := []string{auth.GmailReadonlyScope}
 	reg.Record("get_gmail_message_content", scopes)
-	srv.AddTool(tool, auth.RequireGmailService("get_gmail_message_content", scopes, c, email, GetGmailMessageContent))
+	srv.AddTool(tool, auth.RequireGoogleService("get_gmail_message_content", "Gmail", scopes, gmailFactory, c, email, GetGmailMessageContent))
 }
 
 func registerBatch(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient, email string) {
@@ -53,7 +61,7 @@ func registerBatch(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClien
 	)
 	scopes := []string{auth.GmailReadonlyScope}
 	reg.Record("get_gmail_messages_content_batch", scopes)
-	srv.AddTool(tool, auth.RequireGmailService("get_gmail_messages_content_batch", scopes, c, email, GetGmailMessagesContentBatch))
+	srv.AddTool(tool, auth.RequireGoogleService("get_gmail_messages_content_batch", "Gmail", scopes, gmailFactory, c, email, GetGmailMessagesContentBatch))
 }
 
 func registerSend(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient, email string) {
@@ -68,7 +76,7 @@ func registerSend(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient
 	)
 	scopes := []string{auth.GmailSendScope}
 	reg.Record("send_gmail_message", scopes)
-	srv.AddTool(tool, auth.RequireGmailService("send_gmail_message", scopes, c, email, SendGmailMessage))
+	srv.AddTool(tool, auth.RequireGoogleService("send_gmail_message", "Gmail", scopes, gmailFactory, c, email, SendGmailMessage))
 }
 
 func registerLabels(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClient, email string) {
@@ -78,5 +86,5 @@ func registerLabels(srv *server.MCPServer, reg *core.Registry, c *auth.OAuthClie
 	)
 	scopes := []string{auth.GmailReadonlyScope}
 	reg.Record("list_gmail_labels", scopes)
-	srv.AddTool(tool, auth.RequireGmailService("list_gmail_labels", scopes, c, email, ListGmailLabels))
+	srv.AddTool(tool, auth.RequireGoogleService("list_gmail_labels", "Gmail", scopes, gmailFactory, c, email, ListGmailLabels))
 }

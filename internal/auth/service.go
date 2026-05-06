@@ -1,3 +1,5 @@
+// Package auth provides OAuth 2.0 flow, credential storage, and scope helpers
+// for Google Workspace MCP tools.
 package auth
 
 import (
@@ -9,25 +11,25 @@ import (
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
-	gmailapi "google.golang.org/api/gmail/v1"
 	"google.golang.org/api/option"
 
 	"github.com/sausheong/go_gws_mcp/internal/core/apierror"
 	"github.com/sausheong/go_gws_mcp/internal/core/mcpcontext"
 )
 
-// GmailHandler is the body shape every Gmail tool implementation has.
+// ServiceFactory builds a Google API client (Gmail, Drive, Docs, ...) from
+// a context and option.ClientOptions (typically a TokenSource).
+type ServiceFactory[S any] func(ctx context.Context, opts ...option.ClientOption) (S, error)
+
+// ToolHandler is the body shape every Google-service tool implementation has.
 // `svc` and `userEmail` are injected; the body is pure logic.
-type GmailHandler[T any] func(
+type ToolHandler[S any, T any] func(
 	ctx context.Context,
-	svc *gmailapi.Service,
+	svc S,
 	userEmail string,
 	args T,
 ) (string, error)
 
-// extractUserEmail pulls user_google_email from request arguments. We use it
-// because mcp-go arguments come in as map[string]any and we need both the
-// typed args struct (for the handler) and the email (before binding).
 func extractUserEmail(req mcp.CallToolRequest, defaultEmail string) string {
 	if req.Params.Arguments != nil {
 		if m, ok := req.Params.Arguments.(map[string]any); ok {
@@ -39,8 +41,6 @@ func extractUserEmail(req mcp.CallToolRequest, defaultEmail string) string {
 	return defaultEmail
 }
 
-// bindArgs deserializes req.Params.Arguments into T using a JSON round-trip.
-// mcp-go's arguments are map[string]any; this is the simplest reliable path.
 func bindArgs[T any](req mcp.CallToolRequest) (T, error) {
 	var out T
 	raw := req.Params.Arguments
@@ -57,22 +57,24 @@ func bindArgs[T any](req mcp.CallToolRequest) (T, error) {
 	return out, nil
 }
 
-// RequireGmailService produces an mcp.ToolHandlerFunc that:
+// RequireGoogleService produces an mcp.ToolHandlerFunc that:
 //  1. Binds args into T
 //  2. Resolves user email (request -> ctx -> client default)
 //  3. Loads + refreshes credentials via OAuthClient.GetCredentials
-//  4. Builds gmail.Service
+//  4. Builds the Google service via the supplied factory
 //  5. Calls handler(ctx, svc, userEmail, args)
 //  6. Wraps Google API errors via apierror.Format
 //
-// On AuthRequiredError, returns the formatted instructions as a tool result.
-// On other errors, returns an error result.
-func RequireGmailService[T any](
+// On AuthRequiredError, returns the LLM-targeted ACTION REQUIRED prose with
+// auth URL via StartAuthFlow. On other errors, returns an error result.
+func RequireGoogleService[S any, T any](
 	toolName string,
+	serviceName string,
 	requiredScopes []string,
+	factory ServiceFactory[S],
 	client *OAuthClient,
 	defaultEmail string,
-	handler GmailHandler[T],
+	handler ToolHandler[S, T],
 ) server.ToolHandlerFunc {
 	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 		args, err := bindArgs[T](req)
@@ -95,7 +97,7 @@ func RequireGmailService[T any](
 		if err != nil {
 			var authErr *AuthRequiredError
 			if errors.As(err, &authErr) {
-				flow, ferr := client.StartAuthFlow(userEmail, "Gmail")
+				flow, ferr := client.StartAuthFlow(userEmail, serviceName)
 				if ferr != nil {
 					slog.Warn("StartAuthFlow failed", "tool", toolName, "user", userEmail, "err", ferr)
 					return mcp.NewToolResultText(authErr.Message), nil
@@ -106,7 +108,7 @@ func RequireGmailService[T any](
 		}
 
 		ts := client.Config.TokenSource(ctx, token)
-		svc, err := gmailapi.NewService(ctx, option.WithTokenSource(ts))
+		svc, err := factory(ctx, option.WithTokenSource(ts))
 		if err != nil {
 			return mcp.NewToolResultError(apierror.Format(toolName, err)), nil
 		}
