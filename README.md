@@ -5,6 +5,7 @@ Go port (architectural skeleton + Gmail) of [google_workspace_mcp](https://githu
 ## What's in scope
 
 - 5 Gmail tools: `search_gmail_messages`, `get_gmail_message_content`, `get_gmail_messages_content_batch`, `send_gmail_message`, `list_gmail_labels`
+- 5 Google Drive tools: `search_drive_files`, `list_drive_items`, `get_drive_file_content`, `create_drive_folder`, `create_drive_file`
 - OAuth 2.0 with PKCE
 - Local-directory credential store
 - stdio and streamable-HTTP transports

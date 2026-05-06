@@ -19,6 +19,7 @@ import (
 	"github.com/sausheong/go_gws_mcp/internal/auth"
 	"github.com/sausheong/go_gws_mcp/internal/core"
 	"github.com/sausheong/go_gws_mcp/internal/core/tooltier"
+	"github.com/sausheong/go_gws_mcp/internal/drive"
 	"github.com/sausheong/go_gws_mcp/internal/gmail"
 )
 
@@ -78,7 +79,7 @@ func run() error {
 	// Resolve scopes via tier loader if --tool-tier is set; else use full ToolScopesMap.
 	enabledServices := cfg.EnabledTools
 	if len(enabledServices) == 0 {
-		enabledServices = []string{"gmail"}
+		enabledServices = []string{"gmail", "drive"}
 	}
 	if cfg.ToolTier != "" {
 		loader, err := tooltier.New()
@@ -108,8 +109,17 @@ func run() error {
 	)
 	registry := core.NewRegistry()
 
-	// Register Gmail tools (the only service in the skeleton).
-	gmail.RegisterTools(srv, registry, oauthClient, cfg.DefaultEmail)
+	// Register tools for each enabled service.
+	for _, svc := range enabledServices {
+		switch svc {
+		case "gmail":
+			gmail.RegisterTools(srv, registry, oauthClient, cfg.DefaultEmail)
+		case "drive":
+			drive.RegisterTools(srv, registry, oauthClient, cfg.DefaultEmail)
+		default:
+			slog.Warn("unknown service ignored", "service", svc)
+		}
+	}
 
 	// Filter pass (logs intended removals; mcp-go's runtime removal API is
 	// out of scope for the skeleton — see internal/core/server.go).
