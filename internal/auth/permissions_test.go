@@ -81,3 +81,55 @@ func TestScopesForPermission_GmailSendIsCumulative(t *testing.T) {
 		}
 	}
 }
+
+func TestScopesForPermission_DriveReadonly(t *testing.T) {
+	got, err := ScopesForPermission("drive", "readonly")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != DriveReadonlyScope {
+		t.Fatalf("readonly expected [DriveReadonlyScope], got %v", got)
+	}
+}
+
+func TestScopesForPermission_DriveFileCumulative(t *testing.T) {
+	got, err := ScopesForPermission("drive", "file")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{DriveReadonlyScope: true, DriveFileScope: true}
+	if len(got) != len(want) {
+		t.Fatalf("file level: got %d scopes, want %d (got=%v)", len(got), len(want), got)
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope at file level: %s", s)
+		}
+	}
+}
+
+func TestScopesForPermission_DriveFullCumulative(t *testing.T) {
+	got, err := ScopesForPermission("drive", "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{DriveReadonlyScope: true, DriveFileScope: true, DriveScope: true}
+	if len(got) != len(want) {
+		t.Fatalf("full level: got %d scopes, want %d (got=%v)", len(got), len(want), got)
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope at full level: %s", s)
+		}
+	}
+}
+
+func TestParsePermissions_DriveValid(t *testing.T) {
+	parsed, err := ParsePermissions([]string{"drive:file"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed["drive"] != "file" {
+		t.Fatalf("got %v", parsed)
+	}
+}

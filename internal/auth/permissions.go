@@ -23,7 +23,11 @@ var servicePermissionLevels = map[string][]permissionLevel{
 		{"send", []string{GmailSendScope}},
 		{"full", []string{GmailSettingsScope}},
 	},
-	"drive":    {{"readonly", nil}, {"full", nil}},
+	"drive": {
+		{"readonly", []string{DriveReadonlyScope}},
+		{"file", []string{DriveFileScope}},
+		{"full", []string{DriveScope}},
+	},
 	"calendar": {{"readonly", nil}, {"full", nil}},
 	"docs":     {{"readonly", nil}, {"full", nil}},
 	"sheets":   {{"readonly", nil}, {"full", nil}},
