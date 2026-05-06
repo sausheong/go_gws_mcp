@@ -33,7 +33,10 @@ var servicePermissionLevels = map[string][]permissionLevel{
 		{"readonly", []string{DocsReadonlyScope, DriveReadonlyScope}},
 		{"full", []string{DocsScope}},
 	},
-	"sheets":   {{"readonly", nil}, {"full", nil}},
+	"sheets": {
+		{"readonly", []string{SheetsReadonlyScope, DriveReadonlyScope}},
+		{"full", []string{SheetsScope}},
+	},
 	"chat":     {{"readonly", nil}, {"full", nil}},
 	"forms":    {{"readonly", nil}, {"full", nil}},
 	"slides":   {{"readonly", nil}, {"full", nil}},

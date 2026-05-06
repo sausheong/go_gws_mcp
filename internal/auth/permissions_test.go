@@ -179,3 +179,49 @@ func TestParsePermissions_DocsValid(t *testing.T) {
 		t.Fatalf("got %v", parsed)
 	}
 }
+
+func TestScopesForPermission_SheetsReadonly(t *testing.T) {
+	got, err := ScopesForPermission("sheets", "readonly")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{SheetsReadonlyScope: true, DriveReadonlyScope: true}
+	if len(got) != len(want) {
+		t.Fatalf("readonly: got %d (got=%v), want %d", len(got), got, len(want))
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope at readonly: %s", s)
+		}
+	}
+}
+
+func TestScopesForPermission_SheetsFullCumulative(t *testing.T) {
+	got, err := ScopesForPermission("sheets", "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{
+		SheetsReadonlyScope: true,
+		DriveReadonlyScope:  true,
+		SheetsScope:         true,
+	}
+	if len(got) != len(want) {
+		t.Fatalf("full: got %d (got=%v), want %d", len(got), got, len(want))
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope at full: %s", s)
+		}
+	}
+}
+
+func TestParsePermissions_SheetsValid(t *testing.T) {
+	parsed, err := ParsePermissions([]string{"sheets:full"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed["sheets"] != "full" {
+		t.Fatalf("got %v", parsed)
+	}
+}
