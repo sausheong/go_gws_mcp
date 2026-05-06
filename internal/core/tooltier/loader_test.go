@@ -144,3 +144,32 @@ func TestResolveToolsFromTier_SheetsCore(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveToolsFromTier_SlidesCore(t *testing.T) {
+	loader, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tools, services, err := loader.ResolveToolsFromTier(TierCore, []string{"slides"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(services) != 1 || services[0] != "slides" {
+		t.Fatalf("services: got %v, want [slides]", services)
+	}
+	want := map[string]bool{
+		"create_presentation":       true,
+		"get_presentation":          true,
+		"batch_update_presentation": true,
+		"get_page":                  true,
+		"get_page_thumbnail":        true,
+	}
+	if len(tools) != len(want) {
+		t.Fatalf("count: got %d, want %d (got=%v)", len(tools), len(want), tools)
+	}
+	for _, n := range tools {
+		if !want[n] {
+			t.Fatalf("unexpected tool: %s", n)
+		}
+	}
+}
