@@ -225,3 +225,39 @@ func TestParsePermissions_SheetsValid(t *testing.T) {
 		t.Fatalf("got %v", parsed)
 	}
 }
+
+func TestScopesForPermission_SlidesReadonly(t *testing.T) {
+	got, err := ScopesForPermission("slides", "readonly")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != SlidesReadonlyScope {
+		t.Fatalf("readonly: expected [SlidesReadonlyScope], got %v", got)
+	}
+}
+
+func TestScopesForPermission_SlidesFullCumulative(t *testing.T) {
+	got, err := ScopesForPermission("slides", "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{SlidesReadonlyScope: true, SlidesScope: true}
+	if len(got) != len(want) {
+		t.Fatalf("full: got %d (got=%v), want %d", len(got), got, len(want))
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope at full: %s", s)
+		}
+	}
+}
+
+func TestParsePermissions_SlidesValid(t *testing.T) {
+	parsed, err := ParsePermissions([]string{"slides:full"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed["slides"] != "full" {
+		t.Fatalf("got %v", parsed)
+	}
+}
