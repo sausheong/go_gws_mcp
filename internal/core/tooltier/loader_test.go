@@ -115,3 +115,32 @@ func TestResolveToolsFromTier_DocsCore(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveToolsFromTier_SheetsCore(t *testing.T) {
+	loader, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tools, services, err := loader.ResolveToolsFromTier(TierCore, []string{"sheets"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(services) != 1 || services[0] != "sheets" {
+		t.Fatalf("services: got %v, want [sheets]", services)
+	}
+	want := map[string]bool{
+		"list_spreadsheets":    true,
+		"get_spreadsheet_info": true,
+		"read_sheet_values":    true,
+		"modify_sheet_values":  true,
+		"create_spreadsheet":   true,
+	}
+	if len(tools) != len(want) {
+		t.Fatalf("count: got %d, want %d (got=%v)", len(tools), len(want), tools)
+	}
+	for _, n := range tools {
+		if !want[n] {
+			t.Fatalf("unexpected tool: %s", n)
+		}
+	}
+}

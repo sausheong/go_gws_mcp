@@ -25,3 +25,12 @@ docs:
     - modify_doc_text
   extended: []
   complete: []
+sheets:
+  core:
+    - list_spreadsheets
+    - get_spreadsheet_info
+    - read_sheet_values
+    - modify_sheet_values
+    - create_spreadsheet
+  extended: []
+  complete: []
