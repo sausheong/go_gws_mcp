@@ -8,6 +8,7 @@ Go port (architectural skeleton + Gmail) of [google_workspace_mcp](https://githu
 - 5 Google Drive tools: `search_drive_files`, `list_drive_items`, `get_drive_file_content`, `create_drive_folder`, `create_drive_file`
 - 5 Google Docs tools: `search_docs`, `get_doc_content`, `get_doc_as_markdown`, `create_doc`, `modify_doc_text`
 - 5 Google Sheets tools: `list_spreadsheets`, `get_spreadsheet_info`, `read_sheet_values`, `modify_sheet_values`, `create_spreadsheet`
+- 5 Google Slides tools: `create_presentation`, `get_presentation`, `batch_update_presentation`, `get_page`, `get_page_thumbnail`
 - OAuth 2.0 with PKCE
 - Local-directory credential store
 - stdio and streamable-HTTP transports
