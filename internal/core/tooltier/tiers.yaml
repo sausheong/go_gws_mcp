@@ -16,3 +16,12 @@ drive:
     - create_drive_file
   extended: []
   complete: []
+docs:
+  core:
+    - search_docs
+    - get_doc_content
+    - get_doc_as_markdown
+    - create_doc
+    - modify_doc_text
+  extended: []
+  complete: []

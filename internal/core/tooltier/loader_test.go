@@ -86,3 +86,32 @@ func TestResolveToolsFromTier_DriveCore(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveToolsFromTier_DocsCore(t *testing.T) {
+	loader, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tools, services, err := loader.ResolveToolsFromTier(TierCore, []string{"docs"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(services) != 1 || services[0] != "docs" {
+		t.Fatalf("services: got %v, want [docs]", services)
+	}
+	want := map[string]bool{
+		"search_docs":         true,
+		"get_doc_content":     true,
+		"get_doc_as_markdown": true,
+		"create_doc":          true,
+		"modify_doc_text":     true,
+	}
+	if len(tools) != len(want) {
+		t.Fatalf("tools count: got %d, want %d (got=%v)", len(tools), len(want), tools)
+	}
+	for _, n := range tools {
+		if !want[n] {
+			t.Fatalf("unexpected tool: %s", n)
+		}
+	}
+}
