@@ -63,3 +63,35 @@ func TestScopesForTools_IncludesBaseAndPerService(t *testing.T) {
 		}
 	}
 }
+
+func TestHasRequiredScopes_DriveCoversReadonly(t *testing.T) {
+	if !HasRequiredScopes([]string{DriveScope}, []string{DriveReadonlyScope}) {
+		t.Fatal("drive should cover drive.readonly via hierarchy")
+	}
+}
+
+func TestHasRequiredScopes_DriveCoversFile(t *testing.T) {
+	if !HasRequiredScopes([]string{DriveScope}, []string{DriveFileScope}) {
+		t.Fatal("drive should cover drive.file via hierarchy")
+	}
+}
+
+func TestScopesForTools_Drive(t *testing.T) {
+	got := ScopesForTools([]string{"drive"})
+	want := map[string]bool{
+		DriveReadonlyScope:   true,
+		DriveFileScope:       true,
+		DriveScope:           true,
+		OpenIDScope:          true,
+		UserinfoEmailScope:   true,
+		UserinfoProfileScope: true,
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %d scopes, want %d: got=%v", len(got), len(want), got)
+	}
+	for _, s := range got {
+		if !want[s] {
+			t.Fatalf("unexpected scope: %s (got=%v)", s, got)
+		}
+	}
+}

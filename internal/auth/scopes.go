@@ -19,6 +19,13 @@ const (
 	GmailSettingsScope = "https://www.googleapis.com/auth/gmail.settings.basic"
 )
 
+// Drive scopes.
+const (
+	DriveReadonlyScope = "https://www.googleapis.com/auth/drive.readonly"
+	DriveFileScope     = "https://www.googleapis.com/auth/drive.file"
+	DriveScope         = "https://www.googleapis.com/auth/drive"
+)
+
 // BaseScopes are required for user identification on every OAuth flow.
 var BaseScopes = []string{UserinfoEmailScope, UserinfoProfileScope, OpenIDScope}
 
@@ -26,6 +33,7 @@ var BaseScopes = []string{UserinfoEmailScope, UserinfoProfileScope, OpenIDScope}
 // See https://developers.google.com/gmail/api/auth/scopes.
 var ScopeHierarchy = map[string][]string{
 	GmailModifyScope: {GmailReadonlyScope, GmailSendScope, GmailComposeScope, GmailLabelsScope},
+	DriveScope:       {DriveReadonlyScope, DriveFileScope},
 }
 
 // ToolScopesMap is the full scope set per service.
@@ -34,6 +42,7 @@ var ToolScopesMap = map[string][]string{
 		GmailReadonlyScope, GmailSendScope, GmailComposeScope,
 		GmailModifyScope, GmailLabelsScope, GmailSettingsScope,
 	},
+	"drive": {DriveReadonlyScope, DriveFileScope, DriveScope},
 }
 
 // HasRequiredScopes reports whether `available` satisfies all of `required`,
