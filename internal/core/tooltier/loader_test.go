@@ -57,3 +57,32 @@ func TestResolveToolsFromTier_UnknownTier(t *testing.T) {
 		t.Fatal("expected error for unknown tier")
 	}
 }
+
+func TestResolveToolsFromTier_DriveCore(t *testing.T) {
+	loader, err := New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tools, services, err := loader.ResolveToolsFromTier(TierCore, []string{"drive"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(services) != 1 || services[0] != "drive" {
+		t.Fatalf("services: got %v, want [drive]", services)
+	}
+	want := map[string]bool{
+		"search_drive_files":     true,
+		"list_drive_items":       true,
+		"get_drive_file_content": true,
+		"create_drive_folder":    true,
+		"create_drive_file":      true,
+	}
+	if len(tools) != len(want) {
+		t.Fatalf("tools count: got %d, want %d (got=%v)", len(tools), len(want), tools)
+	}
+	for _, n := range tools {
+		if !want[n] {
+			t.Fatalf("unexpected tool: %s", n)
+		}
+	}
+}

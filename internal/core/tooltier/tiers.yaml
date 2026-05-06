@@ -7,3 +7,12 @@ gmail:
     - list_gmail_labels
   extended: []
   complete: []
+drive:
+  core:
+    - search_drive_files
+    - list_drive_items
+    - get_drive_file_content
+    - create_drive_folder
+    - create_drive_file
+  extended: []
+  complete: []
