@@ -102,4 +102,4 @@ Unit tests cover scopes, permissions parser, config validation, credential store
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
