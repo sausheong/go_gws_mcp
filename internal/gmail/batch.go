@@ -9,7 +9,10 @@ import (
 	gmailapi "google.golang.org/api/gmail/v1"
 )
 
-const batchConcurrency = 5
+const (
+	batchConcurrency = 5
+	batchMaxIDs      = 100
+)
 
 // BatchGetArgs is the arg shape for get_gmail_messages_content_batch.
 type BatchGetArgs struct {
@@ -23,10 +26,13 @@ type batchResult struct {
 	err error
 }
 
-// GetGmailMessagesContentBatch fetches up to N messages in parallel.
+// GetGmailMessagesContentBatch fetches up to batchMaxIDs messages in parallel.
 func GetGmailMessagesContentBatch(ctx context.Context, svc *gmailapi.Service, userEmail string, a BatchGetArgs) (string, error) {
 	if len(a.MessageIDs) == 0 {
 		return "", fmt.Errorf("message_ids is required")
+	}
+	if len(a.MessageIDs) > batchMaxIDs {
+		return "", fmt.Errorf("message_ids exceeds limit of %d (got %d)", batchMaxIDs, len(a.MessageIDs))
 	}
 
 	results := make([]batchResult, len(a.MessageIDs))
@@ -34,16 +40,27 @@ func GetGmailMessagesContentBatch(ctx context.Context, svc *gmailapi.Service, us
 	var wg sync.WaitGroup
 
 	for i, id := range a.MessageIDs {
+		// Acquire BEFORE spawning so we cap the total live goroutine count
+		// at batchConcurrency (not the total number of message IDs).
+		sem <- struct{}{}
 		i, id := i, id
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			sem <- struct{}{}
 			defer func() { <-sem }()
+			defer func() {
+				if r := recover(); r != nil {
+					results[i] = batchResult{idx: i, err: fmt.Errorf("panic fetching %s: %v", id, r)}
+				}
+			}()
 
 			msg, err := svc.Users.Messages.Get("me", id).Format("metadata").Context(ctx).Do()
 			if err != nil {
 				results[i] = batchResult{idx: i, err: err}
+				return
+			}
+			if msg.Payload == nil {
+				results[i] = batchResult{idx: i, err: fmt.Errorf("message %s returned no payload", id)}
 				return
 			}
 			subject := HeaderValue(msg.Payload.Headers, "Subject")
