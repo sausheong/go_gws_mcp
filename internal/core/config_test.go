@@ -23,8 +23,8 @@ func TestConfig_DefaultsWhenEnvUnset(t *testing.T) {
 	if cfg.BaseURI != "http://localhost" {
 		t.Errorf("BaseURI = %q, want http://localhost", cfg.BaseURI)
 	}
-	if cfg.Host != "0.0.0.0" {
-		t.Errorf("Host = %q, want 0.0.0.0", cfg.Host)
+	if cfg.Host != "127.0.0.1" {
+		t.Errorf("Host = %q, want 127.0.0.1", cfg.Host)
 	}
 	if cfg.Transport != "stdio" {
 		t.Errorf("Transport = %q, want stdio", cfg.Transport)

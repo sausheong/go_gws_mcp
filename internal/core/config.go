@@ -35,7 +35,7 @@ func Load() (*Config, error) {
 	cfg := &Config{
 		Port:           8000,
 		BaseURI:        "http://localhost",
-		Host:           "0.0.0.0",
+		Host:           "127.0.0.1",
 		Transport:      "stdio",
 		CredentialsDir: defaultCredentialsDir(),
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net"
 	"net/http"
 	"strconv"
@@ -44,6 +45,10 @@ func Run(ctx context.Context, srv *server.MCPServer, cfg *Config, oauthClient *a
 		mux.Handle("/mcp/", streamable)
 
 		addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
+		if cfg.Host == "0.0.0.0" || cfg.Host == "::" {
+			slog.Warn("streamable-HTTP server bound to all interfaces with no authentication; anyone on the network can drive tools as the authenticated user. Bind to 127.0.0.1 unless you have an external access-control layer.",
+				"host", cfg.Host, "port", cfg.Port)
+		}
 		httpSrv := &http.Server{Addr: addr, Handler: mux}
 		go func() {
 			<-ctx.Done()
