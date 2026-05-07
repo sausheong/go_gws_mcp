@@ -1,6 +1,6 @@
 # go-gws-mcp
 
-Go port (architectural skeleton + Gmail) of [google_workspace_mcp](https://github.com/taylorwilsdon/google_workspace_mcp). Demonstrates the patterns that make the Python project work; ships with 5 Gmail tools as the proof-of-concept.
+Go port of [google_workspace_mcp](https://github.com/taylorwilsdon/google_workspace_mcp), covering 5 services (Gmail, Drive, Docs, Sheets, Slides) with 5 core tools each (25 total).
 
 ## What's in scope
 
@@ -15,14 +15,12 @@ Go port (architectural skeleton + Gmail) of [google_workspace_mcp](https://githu
 - Tool tier loader (YAML-driven)
 - Granular permissions parser (parsed but not enforced — by design)
 
-See [docs/design.md](docs/design.md) for a full architecture overview, and [docs/plans/](docs/plans/) for the implementation plan.
-
 ## Setup
 
 1. **Create OAuth client** at [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
    - Application type: Desktop application (or Web for confidential client)
    - For Web: add `http://localhost:8000/oauth2callback` as a redirect URI
-   - Enable the Gmail API for your project
+   - Enable the Gmail, Drive, Docs, Sheets, and Slides APIs for your project
 
 2. **Configure credentials** — copy `.env.example` to `.env` and fill in `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET`.
 
@@ -88,9 +86,7 @@ Endpoints:
 - **No** attachment storage, SSRF-safe HTTP, file uploads
 - **No** Helm chart, Dockerfile, Smithery / FastMCP Cloud entry points
 - **No** workspace-cli companion
-- 1 service (Gmail) instead of 12
-
-The architecture leaves named hooks for each — see `docs/design.md` § 17.
+- 5 services (Gmail, Drive, Docs, Sheets, Slides) instead of 12 — Calendar, Chat, Forms, Tasks, Contacts, Custom Search, Apps Script not ported
 
 ## Tests
 
