@@ -29,6 +29,16 @@ func exportMimeFor(mt string) string {
 	return ""
 }
 
+// escapeDriveString escapes a value for inclusion as a single-quoted literal
+// in a Drive query string (https://developers.google.com/drive/api/guides/search-files#query_string_terms_and_operators).
+// Backslash and apostrophe are the only characters Drive's query syntax requires
+// to be escaped inside a single-quoted literal.
+func escapeDriveString(s string) string {
+	s = strings.ReplaceAll(s, `\`, `\\`)
+	s = strings.ReplaceAll(s, `'`, `\'`)
+	return s
+}
+
 // isTextLike reports whether a non-Google MIME is plain enough to inline as text.
 func isTextLike(mt string) bool {
 	if strings.HasPrefix(mt, "text/") {

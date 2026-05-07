@@ -34,7 +34,7 @@ func ListDriveItems(ctx context.Context, svc *driveapi.Service, userEmail string
 	if parent == "" {
 		parent = "root"
 	}
-	q := fmt.Sprintf("'%s' in parents and trashed = false", parent)
+	q := fmt.Sprintf("'%s' in parents and trashed = false", escapeDriveString(parent))
 
 	call := svc.Files.List().
 		Q(q).
