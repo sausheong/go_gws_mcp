@@ -18,3 +18,8 @@ client_secret.json
 
 # OS
 .DS_Store
+
+# Local docs (not committed; per-project policy)
+/REVIEW.md
+/todo.md
+/docs/plans/
