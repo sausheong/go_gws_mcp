@@ -24,6 +24,17 @@ func SendGmailMessage(ctx context.Context, svc *gmailapi.Service, userEmail stri
 	if a.To == "" || a.Subject == "" {
 		return "", fmt.Errorf("to and subject are required")
 	}
+	for name, v := range map[string]string{
+		"from":    userEmail,
+		"to":      a.To,
+		"cc":      a.Cc,
+		"bcc":     a.Bcc,
+		"subject": a.Subject,
+	} {
+		if containsCRLF(v) {
+			return "", fmt.Errorf("%s contains CR or LF (header injection rejected)", name)
+		}
+	}
 	raw := buildRFC822Message(userEmail, a)
 	encoded := base64.URLEncoding.EncodeToString([]byte(raw))
 
@@ -32,6 +43,10 @@ func SendGmailMessage(ctx context.Context, svc *gmailapi.Service, userEmail stri
 		return "", err
 	}
 	return fmt.Sprintf("Sent message ID: %s\nThread ID: %s", msg.Id, msg.ThreadId), nil
+}
+
+func containsCRLF(s string) bool {
+	return strings.ContainsAny(s, "\r\n")
 }
 
 func buildRFC822Message(from string, a SendArgs) string {
