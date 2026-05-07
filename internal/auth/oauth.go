@@ -10,11 +10,25 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"sync"
 
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 )
+
+// scopesFromToken extracts the granted scopes from a token's `scope` extra
+// (Google's OAuth2 token response includes a space-separated `scope` field).
+// Returns nil when no `scope` field is present.
+func scopesFromToken(t *oauth2.Token) []string {
+	if t == nil {
+		return nil
+	}
+	if v, ok := t.Extra("scope").(string); ok && v != "" {
+		return strings.Fields(v)
+	}
+	return nil
+}
 
 // generatePKCE returns (verifier, S256-challenge, error) per RFC 7636.
 func generatePKCE() (verifier, challenge string, err error) {
@@ -152,7 +166,14 @@ func (c *OAuthClient) HandleAuthCallback(ctx context.Context, state, code string
 		return "", fmt.Errorf("fetch user email: %w", err)
 	}
 
-	if err := c.Store.Store(email, token); err != nil {
+	grantedScopes := scopesFromToken(token)
+	if len(grantedScopes) == 0 {
+		// Token response didn't include a scope field; fall back to what we
+		// requested. (Google always echoes `scope` for new tokens, so this
+		// branch is mostly defensive.)
+		grantedScopes = c.Config.Scopes
+	}
+	if err := c.Store.Store(email, &StoredCredential{Token: token, Scopes: grantedScopes}); err != nil {
 		return "", fmt.Errorf("persist token: %w", err)
 	}
 	return email, nil
@@ -174,25 +195,32 @@ func (c *OAuthClient) GetCredentials(ctx context.Context, userEmail string, requ
 	}
 
 	// Refresh if needed via TokenSource (auto-refreshes when expired).
-	src := c.Config.TokenSource(ctx, stored)
+	src := c.Config.TokenSource(ctx, stored.Token)
 	fresh, err := src.Token()
 	if err != nil {
 		// Refresh failed (revoked / expired beyond refresh).
 		_ = c.Store.Delete(userEmail)
 		return nil, &AuthRequiredError{Message: fmt.Sprintf("Credentials for %s expired or revoked; user must re-authenticate. Underlying error: %v", userEmail, err)}
 	}
-	if fresh.AccessToken != stored.AccessToken {
-		_ = c.Store.Store(userEmail, fresh) // persist rotated token
+
+	// If the refresh response carried a fresh `scope` field, prefer it;
+	// otherwise keep what we last persisted.
+	grantedScopes := stored.Scopes
+	if newScopes := scopesFromToken(fresh); len(newScopes) > 0 {
+		grantedScopes = newScopes
 	}
 
-	// Scope check via stored scopes (oauth2.Token doesn't carry scopes by default;
-	// we approximate by checking the requested scopes in c.Config.Scopes).
-	// In Python, scopes are stored alongside the token; we mirror that by
-	// re-storing with extras. For the skeleton, we trust c.Config.Scopes and
-	// expect callers (like RequireGmailService) to ensure the OAuth flow was
-	// kicked off with sufficient scopes.
-	if !HasRequiredScopes(c.Config.Scopes, requiredScopes) {
-		return nil, &AuthRequiredError{Message: fmt.Sprintf("Token for %s lacks required scopes; user must re-authorize", userEmail)}
+	if fresh.AccessToken != stored.Token.AccessToken {
+		_ = c.Store.Store(userEmail, &StoredCredential{Token: fresh, Scopes: grantedScopes})
+	}
+
+	// Check granted scopes (not currently-configured scopes). This catches
+	// tokens minted in an earlier run with fewer scopes, or tokens where the
+	// user un-checked some scopes on the consent screen.
+	if !HasRequiredScopes(grantedScopes, requiredScopes) {
+		return nil, &AuthRequiredError{
+			Message: fmt.Sprintf("Token for %s lacks required scopes (granted=%d, needed=%d); user must re-authorize", userEmail, len(grantedScopes), len(requiredScopes)),
+		}
 	}
 	return fresh, nil
 }

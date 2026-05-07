@@ -12,11 +12,20 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// StoredCredential pairs an oauth2 token with the OAuth scopes that were
+// actually granted at issue time. Storing the granted set lets GetCredentials
+// detect tokens that lack scopes a tool now requires (e.g. an earlier auth
+// flow ran with fewer scopes, or the user un-checked some on consent).
+type StoredCredential struct {
+	Token  *oauth2.Token `json:"token"`
+	Scopes []string      `json:"scopes,omitempty"`
+}
+
 // CredentialStore is the interface for OAuth credential persistence.
 // Implementations: LocalDirectoryStore (file-based). Future: GCS, Valkey.
 type CredentialStore interface {
-	Get(email string) (*oauth2.Token, error)
-	Store(email string, token *oauth2.Token) error
+	Get(email string) (*StoredCredential, error)
+	Store(email string, cred *StoredCredential) error
 	Delete(email string) error
 	List() ([]string, error)
 }
@@ -69,7 +78,7 @@ func (s *LocalDirectoryStore) credPath(email string) (string, error) {
 	return resolved, nil
 }
 
-func (s *LocalDirectoryStore) Get(email string) (*oauth2.Token, error) {
+func (s *LocalDirectoryStore) Get(email string) (*StoredCredential, error) {
 	p, err := s.credPath(email)
 	if err != nil {
 		return nil, err
@@ -81,19 +90,33 @@ func (s *LocalDirectoryStore) Get(email string) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
+	var cred StoredCredential
+	if err := json.Unmarshal(data, &cred); err != nil {
+		return nil, fmt.Errorf("parse cred for %s: %w", email, err)
+	}
+	if cred.Token != nil {
+		return &cred, nil
+	}
+	// Backward compat: older files were a bare oauth2.Token. Try that shape.
 	var tok oauth2.Token
 	if err := json.Unmarshal(data, &tok); err != nil {
 		return nil, fmt.Errorf("parse token for %s: %w", email, err)
 	}
-	return &tok, nil
+	if tok.AccessToken == "" && tok.RefreshToken == "" {
+		return nil, fmt.Errorf("empty credential file for %s", email)
+	}
+	return &StoredCredential{Token: &tok}, nil // empty Scopes; caller will trigger re-auth
 }
 
-func (s *LocalDirectoryStore) Store(email string, token *oauth2.Token) error {
+func (s *LocalDirectoryStore) Store(email string, cred *StoredCredential) error {
+	if cred == nil || cred.Token == nil {
+		return errors.New("cred and cred.Token must be non-nil")
+	}
 	p, err := s.credPath(email)
 	if err != nil {
 		return err
 	}
-	data, err := json.MarshalIndent(token, "", "  ")
+	data, err := json.MarshalIndent(cred, "", "  ")
 	if err != nil {
 		return err
 	}
